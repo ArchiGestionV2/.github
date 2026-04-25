@@ -139,16 +139,15 @@ flowchart TB
 
 ## Arborescence du dossier NAU
 
-_Structure normalisée du dossier projet sur le NAS, vérifiée sur plusieurs affaires (R181, R200, R204, R210)._
+_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-25 (ajout dossiers d'instance web `_ARCHI*`)._
 
-> **Convention** : chaque sous-dossier est préfixé par le `NumAffUnique` (ex: `R204D1 DP`). Le préfixe est omis dans le diagramme pour rester lisible. Clique sur les sections 📂 ci-dessous pour déplier les détails.
-
-> **Convention de nommage** : chaque sous-dossier est préfixé par le `NumAffUnique` (ex: `R204D1 DP`). Préfixe omis dans le diagramme pour la lisibilité.
+> **Convention de nommage** : chaque sous-dossier est prefixe par le `NumAffUnique` (ex: `R204D1 DP`). Prefixe omis dans le diagramme pour la lisibilite.
 
 ```mermaid
 flowchart LR
     classDef root fill:#FFF59D,stroke:#F57F17,stroke-width:3px,color:#000
     classDef folder fill:#E3F2FD,stroke:#1565C0,color:#000
+    classDef instance fill:#C8E6C9,stroke:#2E7D32,stroke-width:2px,color:#000
     classDef empty fill:#F5F5F5,stroke:#BDBDBD,stroke-dasharray:3 3,color:#757575
 
     ROOT["🗂️ {NAU} {nom_affaire}"]:::root
@@ -156,18 +155,41 @@ flowchart LR
     ROOT --> ADMIN["📂 ADMINISTRATIF"]:::empty
     ROOT --> CHANTIER["📂 CHANTIER"]:::folder
     ROOT --> COURRIERS["📂 COURRIERS"]:::empty
-    ROOT --> PRJPDF["📂 LE PROJET EN PDF"]:::empty
+    ROOT --> PRJPDF["📂 LE PROJET EN PDF"]:::folder
     ROOT --> PHOTOS["📂 PHOTOS"]:::folder
     ROOT --> PE["📂 PIECES ECRITES"]:::folder
     ROOT --> PLANS["📂 PLANS - IMAGES DU PROJET"]:::folder
     ROOT --> PRODUITS["📂 PRODUITS DOCUMENTATIONS"]:::empty
 
-    CHANTIER --> CR["CR<br/><b>📝 CRRéunion</b>"]:::folder
+    CHANTIER --> ARCHI_CH["🟩 _ARCHICHANTIER/<br/><b>SolutionsWeb.Chantier</b>"]:::instance
+    CHANTIER --> CR["CR<br/><b>📝 CRReunion</b>"]:::folder
     CHANTIER --> FS["FICHIERS SOURCES"]:::folder
     CHANTIER --> SOC["SOCATEB"]:::folder
 
+    ARCHI_CH --> ACH_PH["PhotosRemarques/"]:::folder
+    ARCHI_CH --> ACH_NM["NotesManuscrites/"]:::folder
+    ARCHI_CH --> ACH_VIS["PhotosVisite/"]:::folder
+    ARCHI_CH --> ACH_SIG["Signatures/"]:::folder
+    ARCHI_CH --> ACH_PL["Planning/"]:::folder
+    ARCHI_CH --> ACH_CR["ComptesRendus/"]:::folder
+    ARCHI_CH --> ACH_SUI["SuiviChantier/"]:::folder
+
+    PRJPDF --> ARCHI_FM["🟩 _ARCHIFORM/<br/><b>SolutionsWeb.Sondage</b>"]:::instance
+    PRJPDF --> ARCHI_FI["🟩 _ARCHIFICHES/<br/><b>SolutionsWeb.Fiches</b>"]:::instance
+    PRJPDF --> ARCHI_DP["🟩 _ARCHIDP/<br/><b>SolutionsWeb.DP</b>"]:::instance
+    PRJPDF --> ARCHI_DTG["🟩 _ARCHIDTG/<br/><b>SolutionsWeb.DTG</b>"]:::instance
+
+    ARCHI_FM --> AFM_LOT["{lot_matricule}/"]:::folder
+    ARCHI_FI --> AFI_TPL["{mat}Template/"]:::folder
+    ARCHI_FI --> AFI_FVR["{mat}FichesVisiteRemplies/"]:::folder
+    ARCHI_FI --> AFI_RND["{mat}FichesRendu/"]:::folder
+    ARCHI_FI --> AFI_CRP["{mat}CropsNotes_data/"]:::folder
+    ARCHI_DTG --> ADTG_PH["Photos/"]:::folder
+    ARCHI_DTG --> ADTG_NT["Notes/"]:::folder
+    ARCHI_DTG --> ADTG_RP["Rapports/"]:::folder
+
     PHOTOS --> PHCHAN["PHOTOS CHANTIER"]:::folder
-    PHOTOS --> PHET["PHOTOS ETUDES"]:::folder
+    PHOTOS --> PHET["PHOTOS ETUDES<br/><b>SolutionsWeb.Etude</b>"]:::folder
 
     PE --> APD["APD<br/><b>📊 ArchiEtudes V2</b>"]:::folder
     PE --> APS["APS"]:::folder
@@ -180,26 +202,44 @@ flowchart LR
     PLANS --> PLEX["PLANS EXISTANTS"]:::folder
     PLANS --> PLPR["PLANS PROJETS"]:::folder
 
+    PHET --> PHET_LOT["{lot}_photoetude/"]:::folder
     APD --> APD_SUPPORTS["Supports"]:::folder
-    PHET --> PHET_DATED["Photos {YYYY-MM-DD}/<br/>Photos {thème}/"]:::folder
-    DP --> DP_DEPOT["DEPOT {MOIS} {ANNEE}/<br/>Anciens dossiers/"]:::folder
+    DP --> DP_DEPOT["DEPOT {MOIS} {ANNEE}/"]:::folder
     RAO --> RAO_OLD["0 Old/"]:::folder
 ```
 
-**Légende**
+**Legende**
 
 | Style | Signification |
 |---|---|
-| nom de module **en gras** dans la case | dossier dont le contenu est effectivement produit par ce module |
-| 🟦 bleu | dossier standard existant dans les affaires (rempli à la main ou par des tiers) |
-| ⬜ gris pointillé | dossier vide par défaut |
+| 🟩 vert `_ARCHI*` | Dossier d'instance web — cree et gere automatiquement par un backend SolutionsWeb. Chemin hardcode, structure garantie. |
+| nom de module **en gras** | Dossier dont le contenu est produit par ce module |
+| 🟦 bleu | Dossier standard (rempli manuellement ou par des tiers) |
+| ⬜ gris pointille | Dossier vide par defaut |
 
-> **Note factuelle** : les modules ne codent pas en dur ces chemins. Les utilisateurs les pointent par convention vers ces sous-dossiers au moment du run (wizard ou save-as). L'inscription du module dans la case reflète ce que l'on trouve en pratique dans les affaires inspectées, pas un chemin hardcodé.
+### Dossiers d'instance web (`_ARCHI*`)
 
-> **Visite** n'apparaît dans aucune case : ses sorties vont dans `\\192.168.1.1\Travail\TRAVAIL\TRAVAIL\VISITE CONSEIL\` — hors de l'arborescence NAU.
+Depuis la normalisation NAS (2026-04-25), chaque backend SolutionsWeb gere un dossier d'instance a chemin hardcode :
 
-> **Niveau 3** : la plupart des sous-sous-sous-dossiers (comme `DEPOT JANVIER 2026/`, `Cage d'escalier/`, `Pièces pour variante VMC/`, etc.) sont ad-hoc selon le projet. Seuls les patterns récurrents observés sur plusieurs affaires sont montrés (`Supports`, photos datées, dépôts datés, `0 Old`).
+| Dossier | Backend | Emplacement | Contenu |
+|---------|---------|-------------|---------|
+| `_ARCHICHANTIER/` | Chantier | `{NAU} CHANTIER/` | Photos remarques, notes manuscrites, photos visite, signatures, planning PDF, comptes rendus |
+| `_ARCHIFORM/` | Sondage | `{NAU} LE PROJET EN PDF/` | Pieces jointes des formulaires (par lot) |
+| `_ARCHIFICHES/` | Fiches | `{NAU} LE PROJET EN PDF/` | Templates, fiches scannees, fiches rendues, crops, bilans Excel |
+| `_ARCHIDP/` | DP | `{NAU} LE PROJET EN PDF/` | Lectures DWG (photos, notes, rapports) |
+| `_ARCHIDTG/` | DTG | `{NAU} LE PROJET EN PDF/` | Photos, notes, rapports DTG |
 
+**Securite** : le backend Etude (Photo Terrain) navigue librement dans le NAS mais ne peut pas ecrire dans les dossiers `_ARCHI*` (protection `check_not_in_instance_folder`).
+
+**Dossier hors projet** : `_ARCHIDP_EXPORTS/` a la racine du NAS contient les exports cadastraux (captures IGN). Ce dossier n'est pas dans un projet car l'extraction travaille sur des adresses, pas des NAU.
+
+**Creation automatique** : si le parametre admin `auto_create_nau` est active, les backends creent automatiquement le dossier NAU avec son arborescence quand un projet est accede pour la premiere fois.
+
+> **Modules desktop** : les modules desktop (ArchiDP, ArchiEtudes, CRReunion) ne codent pas en dur ces chemins. Les utilisateurs les pointent par convention au moment du run.
+
+> **Visite** n'apparait dans aucune case : ses sorties vont dans `\192.168.1.1\Travail\TRAVAIL\TRAVAIL\VISITE CONSEIL\` — hors de l'arborescence NAU.
+
+> **Niveau 3** : la plupart des sous-sous-sous-dossiers (comme `DEPOT JANVIER 2026/`, `Cage d'escalier/`, etc.) sont ad-hoc selon le projet. Seuls les patterns recurrents sont montres.
 ---
 
 ## Tables BDD utilisées par module
