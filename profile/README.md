@@ -4,16 +4,19 @@ Documentation transverse de l'organisation.
 
 ## Repos de l'organisation
 
-_Mise a jour : 2026-04-23_
+_Mise a jour : 2026-04-27_
 
 ### Modules actifs
 
 | Repo | Type | Description |
 |------|------|-------------|
-| [SolutionsWeb](https://github.com/ArchiGestionV2/SolutionsWeb) | Web | Suite web (Next.js + FastAPI). Chantier, Sondage, Etude, Repertoires, DTG. Source de verite, deploye sur NAS. |
-| [devtoolSharedPyComponents](https://github.com/ArchiGestionV2/devtoolSharedPyComponents) | Package | `archi-shared` — infrastructure partagee desktop (archi_root, archi_db, archi_ui, archi_services). Tag `v1.0.0`. |
-| [logicielFiches](https://github.com/ArchiGestionV2/logicielFiches) | Desktop | Traitement de fiches de visite balcons (PySide6, MVVM, OCR Claude). |
-| [generateurDWG](https://github.com/ArchiGestionV2/generateurDWG) | Desktop | Generation DWG AutoCAD. Deux sous-modules : Grilles (bordereaux) et Declaration Prealable (cadastre). |
+| [SolutionsWeb](https://github.com/ArchiGestionV2/SolutionsWeb) | Web | Suite web (Next.js + FastAPI). 8 backends : Chantier, Sondage, Fiches, DP, DTG, Etude, Repertoires, Factures. Source de verite, deploye sur NAS. |
+| [ArchiDP-Worker](https://github.com/ArchiGestionV2/ArchiDP-Worker) | Agent | Agent DWG Windows — poll SolutionsWeb.DP et execute AutoCAD COM pour generer les DWG. |
+| [devtoolSharedPyComponents](https://github.com/ArchiGestionV2/devtoolSharedPyComponents) | Package | `archi-shared` — infrastructure partagee (archi_root, archi_db, archi_ui, archi_services). Tag `v1.0.0`. |
+| [generateurDWG](https://github.com/ArchiGestionV2/generateurDWG) | Desktop | Generation DWG AutoCAD. Sous-modules : Grilles (bordereaux) et Declaration Prealable (cadastre). |
+| [generateurPiecesEcrites](https://github.com/ArchiGestionV2/generateurPiecesEcrites) | Desktop | Generateurs Word : CRReunion, CRChantier, Visite, CCTP, Diagnostic, RAO, APD. |
+| [logicielBordereaux](https://github.com/ArchiGestionV2/logicielBordereaux) | Desktop | ArchiEtudes V2 — bordereaux etudes (DQE, descriptifs, planning). Accede a Access. |
+| [devtoolGITManager](https://github.com/ArchiGestionV2/devtoolGITManager) | Dev | Outil interne de management GIT (commit, push, pull, versionnage). |
 
 ### Repos legacy (non migres, restent dans le monorepo `ArchiFACT-dev/ArchiGestionV2`)
 
@@ -25,22 +28,14 @@ _Mise a jour : 2026-04-23_
 | ArchiWebManager | Sera remplace par un nouveau systeme |
 | Sleeping/ (ArchiAdmin, ArchiCR, ArchiPartiesEcrites, ArchiTradLamy, ArchiWord) | Modules en pause |
 
-### Installation d'un module desktop decouple
-
-```bash
-git clone https://github.com/ArchiGestionV2/logicielFiches.git
-cd logicielFiches
-pip install -r requirements.txt   # installe archi-shared[desktop] depuis Git
-cp paths_config.json.example paths_config.json
-# Editer paths_config.json avec les chemins locaux (NAS, BDD)
-python src/main.py
-```
-
 ### Repos archives
 
 | Repo | Raison |
 |------|--------|
 | devtoolSharedWebComponents | Doublon de SolutionsWeb/SharedWebComponents, archive le 2026-04-23 |
+| logicielFiches | Remplace par SolutionsWeb.Fiches (web), archive le 2026-04-27 |
+| logicielFactures | Remplace par SolutionsWeb.Factures (web, PG NAS), archive le 2026-04-27 |
+| logicielDTG | Placeholder jamais rempli, remplace par SolutionsWeb.DTG |
 
 ---
 
@@ -106,21 +101,13 @@ flowchart TB
         Etude["🔴 Etude<br/><i>Photos terrain par lot.<br/>Aucune BDD, NAS fichiers<br/>uniquement</i>"]:::nodb
     end
 
-    %% ── Modules desktop (executables Windows, monorepo ou org) ──
+    %% ── Modules desktop encore actifs ──
 
     subgraph DESKTOP["🖥️ Modules desktop"]
         direction TB
-        Visite["📋 Visite<br/><i>Rapports visite terrain</i>"]:::access
-        ArchiEtudes["📊 ArchiEtudes V2<br/><i>Bordereaux etudes<br/>(DQE, descriptifs, planning)</i>"]:::access
-        CRReunion["📝 CRReunion<br/><i>CR de reunion Word</i>"]:::pg
-        ArchiDPdesk["🖥️ ArchiDP desktop<br/><i>Generation DWG AutoCAD<br/>(agent worker)</i>"]:::access
-        FichesDesk["🖥️ logicielFiches<br/><i>Traitement fiches balcons<br/>(PySide6, MVVM, OCR)</i>"]:::access
-    end
-
-    subgraph SKELETON["🏗️ Squelettes (code a venir)"]
-        direction LR
-        CRChantier["📝 CRChantier<br/>generateurPiecesEcrites"]:::empty
-        CCTP["📄 CCTP<br/>generateurPiecesEcrites"]:::empty
+        ArchiEtudes["📊 logicielBordereaux<br/><i>ArchiEtudes V2 — bordereaux<br/>etudes (DQE, descriptifs,<br/>planning, propositions)</i>"]:::access
+        CRReunion["📝 CRReunion<br/><i>CR de reunion Word<br/>(generateurPiecesEcrites)</i>"]:::pg
+        DPWorker["🖥️ ArchiDP-Worker<br/><i>Agent DWG — poll le backend<br/>DP et execute AutoCAD COM</i>"]:::nodb
     end
 
     %% ── Bases de donnees ──
@@ -149,12 +136,9 @@ flowchart TB
 
     %% ── Connexions desktop ──
 
-    Visite -->|"R+W visite, intervenants,<br/>remarques, photos"| Access
     ArchiEtudes -->|"R+W+S DQE, descriptifs,<br/>planning, propositions"| Access
     ArchiEtudes -.->|"cache session"| SQLite
     CRReunion -.->|"R affaires, intervenants"| PG_NAS
-    ArchiDPdesk -->|"R affaires, DP"| Access
-    FichesDesk -->|"R enrichissement affaires"| Access
 ```
 
 **Legende** 🟦 bleu = PG metier (schemas chantier/sondage, R+W+S) · 🟦 bleu clair = PG NAS (schema public, structure inviolable) · 🟧 orange = Access historique · 🟩 vert = SQLite local · ⚪ gris = pas de BDD · trait plein = connexion principale · trait pointille = connexion secondaire/lecture seule
@@ -163,10 +147,11 @@ flowchart TB
 
 1. **PG metier** (`archifact.chantier` + `archifact.sondage`) est la base de travail des backends web. Structure modifiable (R+W+S).
 2. **PG NAS** (`archifact.public`) est le miroir PostgreSQL de l'ancienne base Access. **Structure inviolable** — aucun ALTER/CREATE/DROP. Contenu editable.
-3. **Access** reste utilise par les modules desktop legacy (Visite, ArchiEtudes V2, ArchiDP desktop, logicielFiches). ArchiEtudes V2 est le seul a modifier le schema Access en prod.
+3. **Access** reste utilise par ArchiEtudes V2 (`logicielBordereaux`) — seul module a modifier le schema Access en prod (ALTER TABLE, CREATE TABLE).
 4. **Factures** a ete migre de SQLite vers PG NAS (`connect_pg_nas`). Il lit et ecrit directement dans `archifact.public`. Integration API Pennylane pour la synchronisation comptable.
 5. **Etude** n'a aucune dependance BDD — il navigue le NAS en lecture/ecriture fichier uniquement.
 6. **Repertoires** est le seul backend web a ecrire dans `archifact.public` (intervenants, OS). Les autres ne font que lire le schema public.
+7. **ArchiDP-Worker** n'a pas d'acces BDD propre — il poll l'API du backend DP via HTTP et execute AutoCAD localement.
 
 ---
 
