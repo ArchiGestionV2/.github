@@ -139,7 +139,7 @@ flowchart TB
 
 ## Arborescence du dossier NAU
 
-_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-26 (photos chantier dans arborescence native, suppression planning PDF et signatures)._
+_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-27 (Sondage + Fiches migres vers arborescence native)._
 
 > **Convention de nommage** : chaque sous-dossier est prefixe par le `NumAffUnique` (ex: `R204D1 DP`). Prefixe omis dans le diagramme pour la lisibilite.
 
@@ -154,7 +154,7 @@ flowchart LR
 
     ROOT --> ADMIN["📂 ADMINISTRATIF"]:::empty
     ROOT --> CHANTIER["📂 CHANTIER"]:::folder
-    ROOT --> COURRIERS["📂 COURRIERS"]:::empty
+    ROOT --> COURRIERS["📂 COURRIERS"]:::folder
     ROOT --> PRJPDF["📂 LE PROJET EN PDF"]:::folder
     ROOT --> PHOTOS["📂 PHOTOS"]:::folder
     ROOT --> PE["📂 PIECES ECRITES"]:::folder
@@ -165,19 +165,15 @@ flowchart LR
     CHANTIER --> FS["FICHIERS SOURCES"]:::folder
     CHANTIER --> SOC["SOCATEB"]:::folder
 
-    PRJPDF --> ARCHI_FM["🟩 _ARCHIFORM/<br/><b>SolutionsWeb.Sondage</b>"]:::instance
-    PRJPDF --> ARCHI_FI["🟩 _ARCHIFICHES/<br/><b>SolutionsWeb.Fiches</b>"]:::instance
     PRJPDF --> ARCHI_DP["🟩 _ARCHIDP/<br/><b>SolutionsWeb.DP</b>"]:::instance
     PRJPDF --> ARCHI_DTG["🟩 _ARCHIDTG/<br/><b>SolutionsWeb.DTG</b>"]:::instance
-
-    ARCHI_FM --> AFM_LOT["{lot_matricule}/"]:::folder
-    ARCHI_FI --> AFI_TPL["{mat}Template/"]:::folder
-    ARCHI_FI --> AFI_FVR["{mat}FichesVisiteRemplies/"]:::folder
-    ARCHI_FI --> AFI_RND["{mat}FichesRendu/"]:::folder
-    ARCHI_FI --> AFI_CRP["{mat}CropsNotes_data/"]:::folder
     ARCHI_DTG --> ADTG_PH["Photos/"]:::folder
     ARCHI_DTG --> ADTG_NT["Notes/"]:::folder
     ARCHI_DTG --> ADTG_RP["Rapports/"]:::folder
+
+    COURRIERS --> SONDAGE["Sondage<br/><b>SolutionsWeb.Sondage</b>"]:::folder
+    SONDAGE --> PJ_PH["Pièces jointes PHOTOS"]:::folder
+    SONDAGE --> PJ_PDF["Pièces jointes PDF"]:::folder
 
     PHOTOS --> PHCHAN["PHOTOS CHANTIER<br/><b>SolutionsWeb.Chantier</b>"]:::folder
     PHOTOS --> PHET["PHOTOS ETUDES<br/><b>SolutionsWeb.Etude</b>"]:::folder
@@ -195,8 +191,14 @@ flowchart LR
     PLANS --> PLEX["PLANS EXISTANTS"]:::folder
     PLANS --> PLPR["PLANS PROJETS"]:::folder
 
-    PHET --> PHET_LOT["{lot}_photoetude/"]:::folder
+    PHET --> PHET_LOT["{NAU} Photos {LOT}/"]:::folder
+
+    APD --> FICHES["Fiches<br/><b>SolutionsWeb.Fiches</b>"]:::folder
+    APD --> BILAN_S["Bilan Sondage<br/><b>SolutionsWeb.Sondage</b>"]:::folder
     APD --> APD_SUPPORTS["Supports"]:::folder
+
+    FICHES --> FICHES_ALL["Toutes les fiches/"]:::folder
+    FICHES --> FICHES_EXT["Extractions data/"]:::folder
     DP --> DP_DEPOT["DEPOT {MOIS} {ANNEE}/"]:::folder
     RAO --> RAO_OLD["0 Old/"]:::folder
 ```
@@ -205,14 +207,16 @@ flowchart LR
 
 | Style | Signification |
 |---|---|
-| 🟩 vert `_ARCHI*` | Dossier d'instance web — cree et gere automatiquement par un backend SolutionsWeb. Chemin hardcode, structure garantie. |
+| 🟩 vert `_ARCHI*` | Dossier d'instance web (legacy, en cours d'abandon). Seuls DP et DTG les utilisent encore. |
 | nom de module **en gras** | Dossier dont le contenu est produit par ce module |
 | 🟦 bleu | Dossier standard (rempli manuellement ou par des tiers) |
 | ⬜ gris pointille | Dossier vide par defaut |
 
 ### Ecritures NAS par backend
 
-**SolutionsWeb.Chantier** ecrit directement dans l'arborescence native :
+Les backends web ecrivent directement dans l'arborescence native du projet :
+
+**SolutionsWeb.Chantier**
 
 | Contenu | Emplacement | Nommage fichier |
 |---------|-------------|-----------------|
@@ -220,18 +224,35 @@ flowchart LR
 
 > Planning et signatures ont ete supprimes (planning gere en BDD via le Gantt, signatures inutilisees).
 
+**SolutionsWeb.Sondage**
+
+| Contenu | Emplacement | Nommage fichier |
+|---------|-------------|-----------------|
+| PJ photos formulaires | `{NAU} COURRIERS/{NAU} Sondage/{NAU} Pieces jointes PHOTOS/` | `{lot_matricule}_PJ_{N}.jpg` |
+| PJ PDF formulaires | `{NAU} COURRIERS/{NAU} Sondage/{NAU} Pieces jointes PDF/` | `{lot_matricule}_PJ_{N}.pdf` |
+| Bilan Excel sondage | `{NAU} PIECES ECRITES/{NAU} APD/{NAU} Bilan Sondage/` | `bilan_{NAU}.xlsx` |
+
+**SolutionsWeb.Fiches**
+
+| Contenu | Emplacement | Nommage fichier |
+|---------|-------------|-----------------|
+| Template de fiche | `{NAU} PIECES ECRITES/{NAU} APD/{NAU} Fiches/` | `{NAU} Template de fiche.pdf` |
+| Fiche rendue par lot | `.../{NAU} Fiches/{NAU} Toutes les fiches/` | `{NAU} Lot {LOT} fiche.pdf` |
+| Fusion tout-en-un | `{NAU} PIECES ECRITES/{NAU} APD/{NAU} Fiches/` | `{NAU} Toutes les fiches en un.pdf` |
+| Exemplaire imprimable | `{NAU} PIECES ECRITES/{NAU} APD/{NAU} Fiches/` | `{NAU} Exemplaire fiche imprimable.pdf` |
+| Extractions manuscrites | `.../{NAU} Fiches/{NAU} Extractions data/` | Convention existante |
+| Photos terrain par lot | `{NAU} PHOTOS/{NAU} PHOTOS ETUDES/{NAU} Photos {LOT}/` | Convention existante |
+
 ### Dossiers d'instance web (`_ARCHI*`)
 
-Les autres backends SolutionsWeb gerent encore un dossier d'instance a chemin hardcode :
+Seuls DP et DTG utilisent encore un dossier d'instance :
 
 | Dossier | Backend | Emplacement | Contenu |
 |---------|---------|-------------|---------|
-| `_ARCHIFORM/` | Sondage | `{NAU} LE PROJET EN PDF/` | Pieces jointes des formulaires (par lot) |
-| `_ARCHIFICHES/` | Fiches | `{NAU} LE PROJET EN PDF/` | Templates, fiches scannees, fiches rendues, crops, bilans Excel |
 | `_ARCHIDP/` | DP | `{NAU} LE PROJET EN PDF/` | Lectures DWG (photos, notes, rapports) |
 | `_ARCHIDTG/` | DTG | `{NAU} LE PROJET EN PDF/` | Photos, notes, rapports DTG |
 
-> `_ARCHICHANTIER/` est vestigiel — son contenu a ete migre vers l'arborescence native et la BDD. Il sera supprime a terme.
+> `_ARCHICHANTIER/`, `_ARCHIFORM/`, `_ARCHIFICHES/` sont vestigiels — leur contenu a ete migre vers l'arborescence native et la BDD. Ils seront supprimes a terme.
 
 **Securite** : le backend Etude (Photo Terrain) navigue librement dans le NAS mais ne peut pas ecrire dans les dossiers `_ARCHI*` (protection `check_not_in_instance_folder`).
 
