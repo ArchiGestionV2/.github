@@ -78,62 +78,95 @@ Les versions suivent le format **`X.Y.Z`** :
 
 ---
 
-## Dépendances BDD des modules de la suite 
+## Dependances BDD des modules de la suite
 
-_Qui tape dans quelle base ? Coup d'œil d'une seconde._
+_Qui tape dans quelle base ? Verifie contre le code le 2026-04-27._
 
 ```mermaid
 flowchart TB
-    classDef access fill:#FFE0B2,stroke:#E65100,stroke-width:2px,color:#000
     classDef pg fill:#BBDEFB,stroke:#0D47A1,stroke-width:2px,color:#000
+    classDef pgnas fill:#90CAF9,stroke:#0D47A1,stroke-width:2px,color:#000
+    classDef access fill:#FFE0B2,stroke:#E65100,stroke-width:2px,color:#000
     classDef sqlite fill:#C8E6C9,stroke:#1B5E20,stroke-width:2px,color:#000
     classDef nodb fill:#ECEFF1,stroke:#90A4AE,color:#455A64,stroke-dasharray:5 5
     classDef empty fill:#FFFFFF,stroke:#BDBDBD,color:#9E9E9E,stroke-dasharray:3 3
     classDef db fill:#FFF59D,stroke:#F57F17,stroke-width:3px,color:#000
-    classDef dbSqlite fill:#A5D6A7,stroke:#1B5E20,stroke-width:3px,color:#000
 
-    ArchiDP["🖥️ ArchiDP<br/>Plans DWG"]:::access
-    Visite["📋 Visite<br/>Rapports visite"]:::access
-    ArchiEtudes["📊 ArchiEtudes V2<br/>Bordereaux études"]:::access
-    CRReunion["📝 CRRéunion<br/>CR de réunion"]:::pg
-    Factures["💰 Factures<br/>Facturation étude + chantier"]:::sqlite
-    SolWeb["🌐 SolutionsWeb<br/>Suite web (6 modules)"]:::pg
-    DevTool["⚙️ DEV-MANAGER<br/>Outil de dev interne"]:::nodb
+    %% ── Backends web (SolutionsWeb, deployes en Docker sur le NAS) ──
 
-    subgraph Skeleton["🏗️ Squelettes (code à venir)"]
+    subgraph WEB["🌐 SolutionsWeb — backends Docker NAS"]
+        direction TB
+        Chantier["🔴 Chantier<br/><i>Suivi de chantier, CR,<br/>tickets, remarques, photos</i>"]:::pg
+        Sondage["🔴 Sondage<br/><i>Formulaires copropriete,<br/>PJ, bilan Excel</i>"]:::pg
+        Fiches["🔴 Fiches<br/><i>Fiches de visite balcons,<br/>template PDF, crops OCR</i>"]:::pg
+        DPweb["🔴 DP<br/><i>Extraction cadastrale,<br/>generation DWG (queue)</i>"]:::pg
+        Repertoires["🔴 Repertoires<br/><i>Annuaire intervenants,<br/>affaires, OS, chantiers</i>"]:::pg
+        Factures["🔴 Factures<br/><i>Facturation etude + chantier,<br/>sync Pennylane</i>"]:::pgnas
+        DTG["🔴 DTG<br/><i>Squelette — pas d'ecriture<br/>reelle pour l'instant</i>"]:::pgnas
+        Etude["🔴 Etude<br/><i>Photos terrain par lot.<br/>Aucune BDD, NAS fichiers<br/>uniquement</i>"]:::nodb
+    end
+
+    %% ── Modules desktop (executables Windows, monorepo ou org) ──
+
+    subgraph DESKTOP["🖥️ Modules desktop"]
+        direction TB
+        Visite["📋 Visite<br/><i>Rapports visite terrain</i>"]:::access
+        ArchiEtudes["📊 ArchiEtudes V2<br/><i>Bordereaux etudes<br/>(DQE, descriptifs, planning)</i>"]:::access
+        CRReunion["📝 CRReunion<br/><i>CR de reunion Word</i>"]:::pg
+        ArchiDPdesk["🖥️ ArchiDP desktop<br/><i>Generation DWG AutoCAD<br/>(agent worker)</i>"]:::access
+        FichesDesk["🖥️ logicielFiches<br/><i>Traitement fiches balcons<br/>(PySide6, MVVM, OCR)</i>"]:::access
+    end
+
+    subgraph SKELETON["🏗️ Squelettes (code a venir)"]
         direction LR
         CRChantier["📝 CRChantier<br/>generateurPiecesEcrites"]:::empty
         CCTP["📄 CCTP<br/>generateurPiecesEcrites"]:::empty
     end
 
-    subgraph EmptyRepos["📭 Repos vides (placeholders)"]
-        direction LR
-        LogDTG["logicielDTG"]:::empty
-    end
+    %% ── Bases de donnees ──
 
-    Access[("💾 Access<br/>ARCHIDONNEES V03.mdb<br/>@ NAS 192.168.1.1<br/>base historique partagée")]:::db
-    PG[("🐘 PostgreSQL<br/>archifact<br/>@ NAS:5433<br/>migration en cours")]:::db
-    SQLite[("📄 SQLite<br/>fichier local par poste<br/>cache / copie Access")]:::dbSqlite
-    Pennylane[("☁️ Pennylane<br/>API externe<br/>comptabilité")]:::db
+    PG_METIER[("🐘 PG metier<br/><b>archifact.chantier</b><br/><b>archifact.sondage</b><br/>@ NAS:5433<br/>58 + 35 tables<br/>R+W+S")]:::db
+    PG_NAS[("🐘 PG NAS<br/><b>archifact.public</b><br/>@ NAS:5433<br/>71 tables legacy<br/>R+W contenu, structure inviolable")]:::db
+    Access[("💾 Access<br/>ARCHIDONNEES V03.mdb<br/>@ NAS SMB<br/>base historique partagee")]:::db
+    SQLite[("📄 SQLite<br/>cache session local<br/>(ArchiEtudes uniquement)")]:::db
+    Pennylane[("☁️ Pennylane<br/>API externe<br/>comptabilite")]:::db
 
-    ArchiDP --> Access
-    Visite --> Access
-    ArchiEtudes --> Access
-    ArchiEtudes -.cache.-> SQLite
-    CRReunion --> PG
-    Factures --> SQLite
-    Factures -.API.-> Pennylane
-    SolWeb --> PG
+    %% ── Connexions web ──
+
+    Chantier -->|"R+W schema chantier<br/>(tickets, CR, remarques...)"| PG_METIER
+    Chantier -.->|"R affaires, intervenants"| PG_NAS
+    Sondage -->|"R+W schema sondage<br/>(projets, lots, reponses...)"| PG_METIER
+    Sondage -.->|"R affaires"| PG_NAS
+    Fiches -->|"R+W zones, lots,<br/>assignments"| PG_METIER
+    Fiches -.->|"R affaires"| PG_NAS
+    DPweb -->|"R+W queue DWG"| PG_METIER
+    DPweb -.->|"R affaires, dp"| PG_NAS
+    Repertoires -->|"R chantier config"| PG_METIER
+    Repertoires -->|"R+W intervenants,<br/>affaires, OS"| PG_NAS
+    Factures -->|"R+W facturation,<br/>affaires, intervenants,<br/>propositions, OS"| PG_NAS
+    Factures -.->|"API sync factures"| Pennylane
+    DTG -.->|"R affaires"| PG_NAS
+
+    %% ── Connexions desktop ──
+
+    Visite -->|"R+W visite, intervenants,<br/>remarques, photos"| Access
+    ArchiEtudes -->|"R+W+S DQE, descriptifs,<br/>planning, propositions"| Access
+    ArchiEtudes -.->|"cache session"| SQLite
+    CRReunion -.->|"R affaires, intervenants"| PG_NAS
+    ArchiDPdesk -->|"R affaires, DP"| Access
+    FichesDesk -->|"R enrichissement affaires"| Access
 ```
 
-**Légende couleurs** 🟧 orange = base Access · 🟦 bleu = PostgreSQL · 🟩 vert = SQLite local · ⚪ gris pointillé = pas de BDD · ⬜ blanc pointillé = code à venir / repo vide · ☁️ jaune = API externe.
+**Legende** 🟦 bleu = PG metier (schemas chantier/sondage, R+W+S) · 🟦 bleu clair = PG NAS (schema public, structure inviolable) · 🟧 orange = Access historique · 🟩 vert = SQLite local · ⚪ gris = pas de BDD · trait plein = connexion principale · trait pointille = connexion secondaire/lecture seule
 
-**À retenir**
+**Points cles**
 
-1. **Access** est la BDD historique partagée par tous les postes (fichier `.mdb` sur le NAS).
-2. **PostgreSQL** est la cible de migration — CRRéunion (desktop) et SolutionsWeb (suite web) y sont branchés.
-3. **SQLite** sert de cache de session local (ArchiEtudes V2) et de copie convertie d'Access (Factures).
-4. **Factures** utilise une copie SQLite de la base Access (conversion offline via `convert_to_sqlite.py`), pas d'accès direct Access. Intégration API Pennylane pour la synchronisation comptable.
+1. **PG metier** (`archifact.chantier` + `archifact.sondage`) est la base de travail des backends web. Structure modifiable (R+W+S).
+2. **PG NAS** (`archifact.public`) est le miroir PostgreSQL de l'ancienne base Access. **Structure inviolable** — aucun ALTER/CREATE/DROP. Contenu editable.
+3. **Access** reste utilise par les modules desktop legacy (Visite, ArchiEtudes V2, ArchiDP desktop, logicielFiches). ArchiEtudes V2 est le seul a modifier le schema Access en prod.
+4. **Factures** a ete migre de SQLite vers PG NAS (`connect_pg_nas`). Il lit et ecrit directement dans `archifact.public`. Integration API Pennylane pour la synchronisation comptable.
+5. **Etude** n'a aucune dependance BDD — il navigue le NAS en lecture/ecriture fichier uniquement.
+6. **Repertoires** est le seul backend web a ecrire dans `archifact.public` (intervenants, OS). Les autres ne font que lire le schema public.
 
 ---
 
