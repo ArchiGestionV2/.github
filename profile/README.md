@@ -139,7 +139,7 @@ flowchart TB
 
 ## Arborescence du dossier NAU
 
-_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-25 (ajout dossiers d'instance web `_ARCHI*`)._
+_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-26 (photos chantier dans arborescence native, suppression planning PDF et signatures)._
 
 > **Convention de nommage** : chaque sous-dossier est prefixe par le `NumAffUnique` (ex: `R204D1 DP`). Prefixe omis dans le diagramme pour la lisibilite.
 
@@ -161,18 +161,9 @@ flowchart LR
     ROOT --> PLANS["📂 PLANS - IMAGES DU PROJET"]:::folder
     ROOT --> PRODUITS["📂 PRODUITS DOCUMENTATIONS"]:::empty
 
-    CHANTIER --> ARCHI_CH["🟩 _ARCHICHANTIER/<br/><b>SolutionsWeb.Chantier</b>"]:::instance
     CHANTIER --> CR["CR<br/><b>📝 CRReunion</b>"]:::folder
     CHANTIER --> FS["FICHIERS SOURCES"]:::folder
     CHANTIER --> SOC["SOCATEB"]:::folder
-
-    ARCHI_CH --> ACH_PH["PhotosRemarques/"]:::folder
-    ARCHI_CH --> ACH_NM["NotesManuscrites/"]:::folder
-    ARCHI_CH --> ACH_VIS["PhotosVisite/"]:::folder
-    ARCHI_CH --> ACH_SIG["Signatures/"]:::folder
-    ARCHI_CH --> ACH_PL["Planning/"]:::folder
-    ARCHI_CH --> ACH_CR["ComptesRendus/"]:::folder
-    ARCHI_CH --> ACH_SUI["SuiviChantier/"]:::folder
 
     PRJPDF --> ARCHI_FM["🟩 _ARCHIFORM/<br/><b>SolutionsWeb.Sondage</b>"]:::instance
     PRJPDF --> ARCHI_FI["🟩 _ARCHIFICHES/<br/><b>SolutionsWeb.Fiches</b>"]:::instance
@@ -188,8 +179,10 @@ flowchart LR
     ARCHI_DTG --> ADTG_NT["Notes/"]:::folder
     ARCHI_DTG --> ADTG_RP["Rapports/"]:::folder
 
-    PHOTOS --> PHCHAN["PHOTOS CHANTIER"]:::folder
+    PHOTOS --> PHCHAN["PHOTOS CHANTIER<br/><b>SolutionsWeb.Chantier</b>"]:::folder
     PHOTOS --> PHET["PHOTOS ETUDES<br/><b>SolutionsWeb.Etude</b>"]:::folder
+
+    PHCHAN --> PHCR["{NAU} CR{N} (DD.MM)/"]:::folder
 
     PE --> APD["APD<br/><b>📊 ArchiEtudes V2</b>"]:::folder
     PE --> APS["APS"]:::folder
@@ -217,17 +210,28 @@ flowchart LR
 | 🟦 bleu | Dossier standard (rempli manuellement ou par des tiers) |
 | ⬜ gris pointille | Dossier vide par defaut |
 
+### Ecritures NAS par backend
+
+**SolutionsWeb.Chantier** ecrit directement dans l'arborescence native :
+
+| Contenu | Emplacement | Nommage fichier |
+|---------|-------------|-----------------|
+| Photos chantier (visite, remarques, tickets, notes manuscrites) | `{NAU} PHOTOS/{NAU} PHOTOS CHANTIER/{NAU} CR{N} ({DD.MM})/` | `{NAU}CR{N}_PHCHANT{X}.jpg` |
+
+> Planning et signatures ont ete supprimes (planning gere en BDD via le Gantt, signatures inutilisees).
+
 ### Dossiers d'instance web (`_ARCHI*`)
 
-Depuis la normalisation NAS (2026-04-25), chaque backend SolutionsWeb gere un dossier d'instance a chemin hardcode :
+Les autres backends SolutionsWeb gerent encore un dossier d'instance a chemin hardcode :
 
 | Dossier | Backend | Emplacement | Contenu |
 |---------|---------|-------------|---------|
-| `_ARCHICHANTIER/` | Chantier | `{NAU} CHANTIER/` | Photos remarques, notes manuscrites, photos visite, signatures, planning PDF, comptes rendus |
 | `_ARCHIFORM/` | Sondage | `{NAU} LE PROJET EN PDF/` | Pieces jointes des formulaires (par lot) |
 | `_ARCHIFICHES/` | Fiches | `{NAU} LE PROJET EN PDF/` | Templates, fiches scannees, fiches rendues, crops, bilans Excel |
 | `_ARCHIDP/` | DP | `{NAU} LE PROJET EN PDF/` | Lectures DWG (photos, notes, rapports) |
 | `_ARCHIDTG/` | DTG | `{NAU} LE PROJET EN PDF/` | Photos, notes, rapports DTG |
+
+> `_ARCHICHANTIER/` est vestigiel — son contenu a ete migre vers l'arborescence native et la BDD. Il sera supprime a terme.
 
 **Securite** : le backend Etude (Photo Terrain) navigue librement dans le NAS mais ne peut pas ecrire dans les dossiers `_ARCHI*` (protection `check_not_in_instance_folder`).
 
