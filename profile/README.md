@@ -147,8 +147,10 @@ _Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-27 (So
 flowchart LR
     classDef root fill:#FFF59D,stroke:#F57F17,stroke-width:3px,color:#000
     classDef folder fill:#E3F2FD,stroke:#1565C0,color:#000
+    classDef web fill:#FFCDD2,stroke:#C62828,stroke-width:2px,color:#000
     classDef instance fill:#C8E6C9,stroke:#2E7D32,stroke-width:2px,color:#000
     classDef empty fill:#F5F5F5,stroke:#BDBDBD,stroke-dasharray:3 3,color:#757575
+    classDef file fill:#FFF,stroke:#C62828,stroke-width:1px,color:#C62828,stroke-dasharray:3 3
 
     ROOT["🗂️ {NAU} {nom_affaire}"]:::root
 
@@ -161,44 +163,53 @@ flowchart LR
     ROOT --> PLANS["📂 PLANS - IMAGES DU PROJET"]:::folder
     ROOT --> PRODUITS["📂 PRODUITS DOCUMENTATIONS"]:::empty
 
-    CHANTIER --> CR["CR<br/><b>📝 CRReunion</b>"]:::folder
+    %% ── CHANTIER ──
+    CHANTIER --> CR["CR<br/>Comptes rendus de reunion<br/><i>desktop CRReunion</i>"]:::folder
     CHANTIER --> FS["FICHIERS SOURCES"]:::folder
     CHANTIER --> SOC["SOCATEB"]:::folder
 
-    PRJPDF --> ARCHI_DP["🟩 _ARCHIDP/<br/><b>SolutionsWeb.DP</b>"]:::instance
-    PRJPDF --> ARCHI_DTG["🟩 _ARCHIDTG/<br/><b>SolutionsWeb.DTG</b>"]:::instance
+    %% ── COURRIERS ──
+    COURRIERS --> SONDAGE["🔴 Sondage"]:::web
+    SONDAGE --> PJ_PH["🔴 Pieces jointes PHOTOS<br/><i>Photos uploadees par les copros<br/>via le formulaire de sondage</i><br/>{lot}_PJ_{N}.jpg"]:::web
+    SONDAGE --> PJ_PDF["🔴 Pieces jointes PDF<br/><i>Documents PDF uploadees par les copros<br/>via le formulaire de sondage</i><br/>{lot}_PJ_{N}.pdf"]:::web
+
+    %% ── LE PROJET EN PDF ──
+    PRJPDF --> ARCHI_DP["🟩 _ARCHIDP/<br/><i>Exports cadastraux, captures IGN<br/>generes par SolutionsWeb.DP</i>"]:::instance
+    PRJPDF --> ARCHI_DTG["🟩 _ARCHIDTG/<br/><i>DTG — squelette, pas d'ecriture<br/>reelle pour l'instant</i>"]:::instance
     ARCHI_DTG --> ADTG_PH["Photos/"]:::folder
     ARCHI_DTG --> ADTG_NT["Notes/"]:::folder
     ARCHI_DTG --> ADTG_RP["Rapports/"]:::folder
 
-    COURRIERS --> SONDAGE["Sondage<br/><b>SolutionsWeb.Sondage</b>"]:::folder
-    SONDAGE --> PJ_PH["Pièces jointes PHOTOS"]:::folder
-    SONDAGE --> PJ_PDF["Pièces jointes PDF"]:::folder
+    %% ── PHOTOS ──
+    PHOTOS --> PHCHAN["🔴 PHOTOS CHANTIER"]:::web
+    PHCHAN --> PHCR["🔴 {NAU} CR{N} (DD.MM)/<br/><i>Un dossier par visite de chantier.<br/>Contient toutes les photos prises<br/>sur le terrain : remarques, tickets,<br/>visite, notes manuscrites.</i><br/>{NAU}CR{N}_PHCHANT{X}.jpg"]:::web
 
-    PHOTOS --> PHCHAN["PHOTOS CHANTIER<br/><b>SolutionsWeb.Chantier</b>"]:::folder
-    PHOTOS --> PHET["PHOTOS ETUDES<br/><b>SolutionsWeb.Etude</b>"]:::folder
+    PHOTOS --> PHET["PHOTOS ETUDES"]:::folder
+    PHET --> PHET_LOT["🔴 {NAU} Photos {LOT}/<br/><i>Photos terrain par lot.<br/>Uploadees depuis le site (Etude).<br/>Lues par le module Fiches pour<br/>injection dans les PDF.</i>"]:::web
 
-    PHCHAN --> PHCR["{NAU} CR{N} (DD.MM)/"]:::folder
-
-    PE --> APD["APD<br/><b>📊 ArchiEtudes V2</b>"]:::folder
+    %% ── PIECES ECRITES ──
+    PE --> APD["APD"]:::folder
     PE --> APS["APS"]:::folder
-    PE --> DCE["DCE<br/><b>📊 ArchiEtudes V2</b>"]:::folder
-    PE --> DP["DP<br/><b>🖥️ ArchiDP</b>"]:::folder
-    PE --> RAO["RAO<br/><b>📊 ArchiEtudes V2</b>"]:::folder
+    PE --> DCE["DCE<br/><i>Bordereaux ArchiEtudes V2</i>"]:::folder
+    PE --> DP["DP<br/><i>Declaration prealable<br/>desktop ArchiDP</i>"]:::folder
+    PE --> RAO["RAO<br/><i>Bordereaux ArchiEtudes V2</i>"]:::folder
 
+    APD --> FICHES["🔴 Fiches"]:::web
+    FICHES --> F_TPL["🔴 {NAU} Template de fiche.pdf<br/><i>Modele PDF vierge du projet,<br/>uploade par l'agence</i>"]:::file
+    FICHES --> F_ALL["🔴 {NAU} Toutes les fiches en un.pdf<br/><i>Fusion de toutes les fiches<br/>rendues en un seul document</i>"]:::file
+    FICHES --> F_IMP["🔴 {NAU} Exemplaire fiche imprimable.pdf<br/><i>Formulaire vierge pour<br/>impression terrain</i>"]:::file
+    FICHES --> FICHES_LOTS["🔴 Toutes les fiches/<br/><i>Fiches rendues individuelles,<br/>une par lot, avec donnees<br/>et photos injectees sur le template</i><br/>{NAU} Lot {LOT} fiche.pdf"]:::web
+    FICHES --> FICHES_EXT["🔴 Extractions data/<br/><i>Crops des zones manuscrites<br/>extraites des fiches scannees<br/>(images 300 DPI)</i>"]:::web
+
+    APD --> BILAN_S["🔴 Bilan Sondage/<br/><i>Tableau Excel de synthese<br/>des reponses au sondage</i><br/>bilan_{NAU}.xlsx"]:::web
+    APD --> APD_SUPPORTS["Supports"]:::folder
+
+    %% ── PLANS ──
     PLANS --> PL3D["3D"]:::folder
     PLANS --> PLPS["PHOTOSHOP - VUES PROJETS"]:::folder
     PLANS --> PLEX["PLANS EXISTANTS"]:::folder
     PLANS --> PLPR["PLANS PROJETS"]:::folder
 
-    PHET --> PHET_LOT["{NAU} Photos {LOT}/"]:::folder
-
-    APD --> FICHES["Fiches<br/><b>SolutionsWeb.Fiches</b>"]:::folder
-    APD --> BILAN_S["Bilan Sondage<br/><b>SolutionsWeb.Sondage</b>"]:::folder
-    APD --> APD_SUPPORTS["Supports"]:::folder
-
-    FICHES --> FICHES_ALL["Toutes les fiches/"]:::folder
-    FICHES --> FICHES_EXT["Extractions data/"]:::folder
     DP --> DP_DEPOT["DEPOT {MOIS} {ANNEE}/"]:::folder
     RAO --> RAO_OLD["0 Old/"]:::folder
 ```
@@ -207,10 +218,11 @@ flowchart LR
 
 | Style | Signification |
 |---|---|
+| 🔴 rouge | Dossier ou fichier ecrit automatiquement par un backend SolutionsWeb. Le contenu de chaque noeud decrit ce qui y est stocke et par quel module. |
 | 🟩 vert `_ARCHI*` | Dossier d'instance web (legacy, en cours d'abandon). Seuls DP et DTG les utilisent encore. |
-| nom de module **en gras** | Dossier dont le contenu est produit par ce module |
 | 🟦 bleu | Dossier standard (rempli manuellement ou par des tiers) |
 | ⬜ gris pointille | Dossier vide par defaut |
+| ⬜ rouge pointille | Fichier individuel (pas un dossier) ecrit par un backend |
 
 ### Ecritures NAS par backend
 
