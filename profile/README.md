@@ -139,7 +139,7 @@ flowchart TB
 
 ## Arborescence du dossier NAU
 
-_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-27 (Sondage + Fiches migres vers arborescence native)._
+_Structure normalisee du dossier projet sur le NAS. Mise a jour : 2026-04-27 (Sondage, Fiches, DP migres vers arborescence native)._
 
 > **Convention de nommage** : chaque sous-dossier est prefixe par le `NumAffUnique` (ex: `R204D1 DP`). Prefixe omis dans le diagramme pour la lisibilite.
 
@@ -174,7 +174,6 @@ flowchart LR
     SONDAGE --> PJ_PDF["🔴 Pieces jointes PDF<br/><i>Documents PDF uploadees par les copros<br/>via le formulaire de sondage</i><br/>{lot}_PJ_{N}.pdf"]:::web
 
     %% ── LE PROJET EN PDF ──
-    PRJPDF --> ARCHI_DP["🟩 _ARCHIDP/<br/><i>Exports cadastraux, captures IGN<br/>generes par SolutionsWeb.DP</i>"]:::instance
     PRJPDF --> ARCHI_DTG["🟩 _ARCHIDTG/<br/><i>DTG — squelette, pas d'ecriture<br/>reelle pour l'instant</i>"]:::instance
     ARCHI_DTG --> ADTG_PH["Photos/"]:::folder
     ARCHI_DTG --> ADTG_NT["Notes/"]:::folder
@@ -210,6 +209,9 @@ flowchart LR
     PLANS --> PLEX["PLANS EXISTANTS"]:::folder
     PLANS --> PLPR["PLANS PROJETS"]:::folder
 
+    PLEX --> PLEX_EXT["🔴 {NAU} Extractions cadastrales/<br/><i>Captures satellite, cadastre IGN,<br/>plan de situation, donnees.json,<br/>photos DP5-DP8.<br/>Genere par SolutionsWeb.DP</i>"]:::web
+    PLEX --> PLEX_DWG["🔴 DWG genere<br/><i>Fichier AutoCAD de la declaration<br/>prealable, produit par l'agent<br/>DWG Windows</i>"]:::file
+
     DP --> DP_DEPOT["DEPOT {MOIS} {ANNEE}/"]:::folder
     RAO --> RAO_OLD["0 Old/"]:::folder
 ```
@@ -219,7 +221,7 @@ flowchart LR
 | Style | Signification |
 |---|---|
 | 🔴 rouge | Dossier ou fichier ecrit automatiquement par un backend SolutionsWeb. Le contenu de chaque noeud decrit ce qui y est stocke et par quel module. |
-| 🟩 vert `_ARCHI*` | Dossier d'instance web (legacy, en cours d'abandon). Seuls DP et DTG les utilisent encore. |
+| 🟩 vert `_ARCHI*` | Dossier d'instance web (legacy, en cours d'abandon). Seul DTG l'utilise encore (squelette). |
 | 🟦 bleu | Dossier standard (rempli manuellement ou par des tiers) |
 | ⬜ gris pointille | Dossier vide par defaut |
 | ⬜ rouge pointille | Fichier individuel (pas un dossier) ecrit par un backend |
@@ -255,20 +257,24 @@ Les backends web ecrivent directement dans l'arborescence native du projet :
 | Extractions manuscrites | `.../{NAU} Fiches/{NAU} Extractions data/` | Convention existante |
 | Photos terrain par lot | `{NAU} PHOTOS/{NAU} PHOTOS ETUDES/{NAU} Photos {LOT}/` | Convention existante |
 
+**SolutionsWeb.DP**
+
+| Contenu | Emplacement | Nommage fichier |
+|---------|-------------|-----------------|
+| Extractions cadastrales (satellite, cadastre IGN, situation, donnees.json, photos DP5-DP8) | `{NAU} PLANS - IMAGES DU PROJET/PLANS EXISTANTS/{NAU} Extractions cadastrales/` | `satellite.png`, `cadastre.png`, `situation.png`, `donnees.json`, `dp{N}.jpg` |
+| DWG declaration prealable | `{NAU} PLANS - IMAGES DU PROJET/PLANS EXISTANTS/` | Genere par l'agent DWG Windows |
+
 ### Dossiers d'instance web (`_ARCHI*`)
 
-Seuls DP et DTG utilisent encore un dossier d'instance :
+Seul DTG utilise encore un dossier d'instance (squelette, pas d'ecriture reelle) :
 
 | Dossier | Backend | Emplacement | Contenu |
 |---------|---------|-------------|---------|
-| `_ARCHIDP/` | DP | `{NAU} LE PROJET EN PDF/` | Lectures DWG (photos, notes, rapports) |
 | `_ARCHIDTG/` | DTG | `{NAU} LE PROJET EN PDF/` | Photos, notes, rapports DTG |
 
-> `_ARCHICHANTIER/`, `_ARCHIFORM/`, `_ARCHIFICHES/` sont vestigiels — leur contenu a ete migre vers l'arborescence native et la BDD. Ils seront supprimes a terme.
+> `_ARCHICHANTIER/`, `_ARCHIFORM/`, `_ARCHIFICHES/`, `_ARCHIDP/`, `_ARCHIDP_EXPORTS/` sont vestigiels — leur contenu a ete migre vers l'arborescence native. Ils seront supprimes a terme.
 
 **Securite** : le backend Etude (Photo Terrain) navigue librement dans le NAS mais ne peut pas ecrire dans les dossiers `_ARCHI*` (protection `check_not_in_instance_folder`).
-
-**Dossier hors projet** : `_ARCHIDP_EXPORTS/` a la racine du NAS contient les exports cadastraux (captures IGN). Ce dossier n'est pas dans un projet car l'extraction travaille sur des adresses, pas des NAU.
 
 **Creation automatique** : si le parametre admin `auto_create_nau` est active, les backends creent automatiquement le dossier NAU avec son arborescence quand un projet est accede pour la premiere fois.
 
